@@ -1,6 +1,10 @@
 FROM node:18-slim
 
-RUN apt-get update && apt-get install -y python3 python3-pip
+# Install Python and required build tools
+RUN apt-get update && apt-get install -y \
+    python3 python3-pip python3-dev \
+    build-essential \
+    && apt-get clean
 
 WORKDIR /app
 
