@@ -36,7 +36,15 @@ function LoginPage({ onLogin }) {
 
   return (
     <Box sx={{ height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#f4f6f8' }}>
-      <Paper elevation={3} sx={{ padding: 4, width: 350, textAlign: 'center' }}>
+      <Paper
+        elevation={3}
+        sx={{ padding: 4, width: 350, textAlign: 'center' }}
+        component="form"
+        onSubmit={(e) => {
+          e.preventDefault();   // prevent page refresh
+          handleLogin();        // trigger the login logic
+        }}
+      >
         <Typography variant="h5" gutterBottom>Sign In</Typography>
 
         {errorMsg && <Alert severity="error" sx={{ mb: 2 }}>{errorMsg}</Alert>}
