@@ -7,11 +7,22 @@ function HomePage() {
   const [patients, setPatients] = useState([]);
   const [selectedPatient, setSelectedPatient] = useState('');
 
+  const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+
   // Fetch patients from the backend API on component mount
   useEffect(() => {
     const fetchPatients = async () => {
       try {
-        const response = await fetch('http://localhost:3000/list-patients');  // Change the URL to your backend
+        const response = await fetch(`${BACKEND_URL}/list-patients`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'omit'  // VERY IMPORTANT for deployed backend to avoid 431 errors
+        });
+
+        if (!response.ok) {
+          throw new Error(`Server error: ${response.status}`);
+        }
+
         const data = await response.json();
         setPatients(data);  // Set patients in state
       } catch (error) {

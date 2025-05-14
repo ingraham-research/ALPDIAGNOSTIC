@@ -19,14 +19,29 @@ function AddPatientPage() {
   }, []);
 
   const loadPatients = async () => {
-    console.log("Loading patients..."); // Debugging message
+    console.log("Loading patients...");
     setLoading(true);
-    const response = await fetch(`${BACKEND_URL}/list-patients`);  // Ensure you're using the correct backend URL
-    const patientsData = await response.json();
-    console.log("Patients loaded:", patientsData); // Debugging message
-    setPatients(patientsData);
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/list-patients`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'omit',
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+
+      const patientsData = await response.json();
+      console.log("Patients loaded:", patientsData);
+      setPatients(patientsData);
+    } catch (error) {
+      console.error('Error loading patients:', error.message);
+    }
+
     setLoading(false);
-  };  
+  };
 
   const handleAddPatient = async () => {
     const patientId = prompt("Enter patient ID:");
@@ -49,16 +64,29 @@ function AddPatientPage() {
   };
 
   const handleSelectPatient = async (patientId) => {
-    console.log(`Selecting patient with ID: ${patientId}`); // Debugging message
+    console.log(`Selecting patient with ID: ${patientId}`);
     setSelectedPatient(patientId);
     setShowDialog(true);
     setLoading(true);
 
-    const response = await fetch(`${BACKEND_URL}/list-patient-sessions/${patientId}`);  // Adjusted API path
-    console.log('Fetching sessions for patient:', patientId); // Debugging message
-    const sessionsData = await response.json();
-    console.log("Sessions data:", sessionsData); // Debugging message
-    setSessions(sessionsData);
+    try {
+      const response = await fetch(`${BACKEND_URL}/list-patient-sessions/${patientId}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'omit',
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+
+      const sessionsData = await response.json();
+      console.log("Sessions data:", sessionsData);
+      setSessions(sessionsData);
+    } catch (error) {
+      console.error('Error fetching sessions:', error.message);
+    }
+
     setLoading(false);
   };
 
@@ -82,10 +110,11 @@ function AddPatientPage() {
 
     setSyncLoading((prev) => ({ ...prev, [patientId]: true }));
 
-    const response = await fetch(`${BACKEND_URL}/process-and-upload-session`, {  // Adjusted API path
-      method: "POST",
-      body: JSON.stringify({ patientId, visitNumber, sessionNumber }),
-      headers: { "Content-Type": "application/json" },
+    const response = await fetch(`${BACKEND_URL}/process-and-upload-session`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'omit',
+      body: JSON.stringify({ patientId, visitNumber, sessionNumber })
     });
     const message = await response.text();
     console.log("Response from sync request:", message); // Debugging message
@@ -94,6 +123,8 @@ function AddPatientPage() {
       alert(`✅ ${message}`);
     } else {
       alert(`❌ Sync failed for ${patientId}`);
+      setSyncLoading((prev) => ({ ...prev, [patientId]: false }));
+      return;
     }
 
     setSyncLoading((prev) => ({ ...prev, [patientId]: false }));
@@ -121,10 +152,16 @@ function AddPatientPage() {
 
     console.log(`Deleting session file: ${fileName} for patient: ${patient}`); // Debugging message
     fileName = fileName.replace('V', 'T')
-    const response = await fetch(`${BACKEND_URL}/delete-session/${patient}/${fileName}`, { method: "DELETE" });  // Adjusted API path
+    const response = await fetch(`${BACKEND_URL}/delete-patient/${selectedPatient}`, {
+      method: 'DELETE',
+      credentials: 'omit'
+    });
     if (response.ok) {
       alert("🗑️ Session file deleted!");
       handleSelectPatient(patient);
+    } else {
+      alert("❌ Failed to delete patient.");
+      return;
     }
   };
 

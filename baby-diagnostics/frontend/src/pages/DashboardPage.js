@@ -78,40 +78,53 @@ function DashboardPage() {
     const fetchCharData = async () => {
       try {
         const url = `${BACKEND_URL}/list-patient-char-sessions/${patientName}`;
-        const response = await fetch(url);
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'omit'
+        });
+
+        if (!response.ok) {
+          throw new Error(`Server responded with status ${response.status}`);
+        }
+
         const data = await response.json();
         setCharData(data);
 
         if (data.length > 0) {
           const sorted = [...data].sort((a, b) => {
-            if (a.sessionT === b.sessionT) {
-              return b.sessionS - a.sessionS;
-            }
+            if (a.sessionT === b.sessionT) return b.sessionS - a.sessionS;
             return b.sessionT - a.sessionT;
           });
+
           const latest = sorted[0];
 
           setLatestALP(latest.Predicted_Class || 'N/A');
-          setLatestConfidence(latest.Confidence_Score ? (latest.Confidence_Score * 100).toFixed(1) + '%' : 'N/A');
+          setLatestConfidence(
+            latest.Confidence_Score ? (latest.Confidence_Score * 100).toFixed(1) + '%' : 'N/A'
+          );
+
           setConfidenceScores({
             'Stage 1': latest['Prob_Stage 1'] ? (latest['Prob_Stage 1'] * 100).toFixed(1) + '%' : 'N/A',
             'Stage 2': latest['Prob_Stage 2'] ? (latest['Prob_Stage 2'] * 100).toFixed(1) + '%' : 'N/A',
-            'Stage 3': latest['Prob_Stage 3'] ? (latest['Prob_Stage 3'] * 100).toFixed(1) + '%' : 'N/A',
+            'Stage 3': latest['Prob_Stage 3'] ? (latest['Prob_Stage 3'] * 100).toFixed(1) + '%' : 'N/A'
           });
 
           const keys = Object.keys(latest).filter(key =>
             !['sessionT', 'sessionS', 'Timestamp', 'Elapsed Time (s)', 'Elapsed Time (min)'].includes(key)
           );
+
           setAvailableChars(keys);
           setSelectedMetrics(keys.slice(0, 1));
         }
       } catch (error) {
-        console.error('Error fetching char session data:', error);
+        console.error('Error fetching char session data:', error.message);
       }
     };
 
     fetchCharData();
   }, [patientName]);
+
 
   const sortedData = [...charData].sort((a, b) => {
     if (a.Timestamp && b.Timestamp) {
