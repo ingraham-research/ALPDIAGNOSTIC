@@ -5,7 +5,9 @@ const { createPatientFolder, processAndUploadSession, listPatients, listPatientS
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: 'https://alpdiagnostic.vercel.app'  
+}));
 app.use(bodyParser.json());
 
 app.get('/', (req, res) => {
