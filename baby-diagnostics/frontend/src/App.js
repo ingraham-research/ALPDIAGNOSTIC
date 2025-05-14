@@ -20,16 +20,19 @@ function App() {
     return () => unsubscribe();
   }, []);
 
-  if (loading) return <p>Loading...</p>;
+  if (loading) return null; // Prevent routes from rendering until auth state is ready
 
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={user ? <Navigate to="/home" /> : <LoginPage />} />
+        <Route path="/" element={<Navigate to={user ? "/home" : "/login"} />} />
+        <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/home" />} />
         <Route path="/home" element={user ? <HomePage /> : <Navigate to="/login" />} />
         <Route path="/add-patient" element={user ? <AddPatientPage /> : <Navigate to="/login" />} />
         <Route path="/dashboard" element={user ? <DashboardPage /> : <Navigate to="/login" />} />
+        <Route path="*" element={<Navigate to={user ? "/home" : "/login"} />} />
       </Routes>
+
     </Router>
   );
 }

@@ -72,23 +72,25 @@ function LoginPage() {
         />
 
         <Button
+          type="submit"
           fullWidth
           variant="contained"
           color="primary"
           sx={{ mt: 2, mb: 1 }}
-          onClick={handleLogin} // ⬅️ manual click login
         >
           Login
         </Button>
 
         <Link
           component="button"
+          type="button" // ⬅️ prevent it from acting like a submit button
           variant="body2"
           onClick={handleForgotPassword}
           sx={{ textTransform: 'none' }}
         >
           Forgot password?
         </Link>
+
       </Paper>
     </Box>
   );
