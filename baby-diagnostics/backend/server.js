@@ -6,7 +6,7 @@ const { createPatientFolder, processAndUploadSession, listPatients, listPatientS
 const app = express();
 
 app.use(cors({
-  origin: 'https://alpdiagnostic.vercel.app',  
+  origin: 'https://alpdiagnostic.onrender.com',  
   methods: ['GET', 'POST', 'DELETE'],
   credentials: true
 }));
@@ -110,7 +110,7 @@ app.get('/list-patient-char-sessions/:patientId', async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
