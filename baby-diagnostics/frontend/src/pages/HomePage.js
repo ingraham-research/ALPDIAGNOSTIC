@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Typography, Button, Box, MenuItem, TextField } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { getAuth, signOut } from 'firebase/auth';
+
 
 function HomePage() {
   const navigate = useNavigate();
@@ -40,6 +42,16 @@ function HomePage() {
     } else {
       alert('Please select a patient.');
     }
+  };
+  const handleLogout = () => {
+    const auth = getAuth();
+    signOut(auth)
+      .then(() => {
+        navigate('/login'); // ⬅️ change this if your login route is different
+      })
+      .catch((error) => {
+        console.error('Logout failed:', error);
+      });
   };
 
   return (
@@ -92,6 +104,14 @@ function HomePage() {
         onClick={() => navigate('/add-patient')}
       >
         Add Patient
+      </Button>
+      <Button
+        variant="text"
+        color="error"
+        sx={{ marginTop: '20px', width: '200px' }}
+        onClick={handleLogout}
+      >
+        Log Out
       </Button>
     </Box>
   );
