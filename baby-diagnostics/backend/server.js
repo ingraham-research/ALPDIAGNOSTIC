@@ -1,0 +1,111 @@
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const { createPatientFolder, processAndUploadSession, listPatients, listPatientSessions, deleteSessionFile, deletePatientFolder, listPatientCharSessions } = require('./services/s3Service');
+
+const app = express();
+
+app.use(cors());
+app.use(bodyParser.json());
+
+app.get('/', (req, res) => {
+  console.log('Received request for root route');
+  res.send('Backend is running');
+});
+
+app.post('/create-patient', async (req, res) => {
+  const { patientId } = req.body;
+  console.log(`Received request to create patient with ID: ${patientId}`);
+  try {
+    await createPatientFolder(patientId);
+    console.log(`Patient folder for ${patientId} created successfully`);
+    res.status(200).send(`Patient folder for ${patientId} created`);
+  } catch (error) {
+    console.error(`Error creating patient folder: ${error.message}`);
+    res.status(500).send(`Error creating patient folder: ${error.message}`);
+  }
+});
+
+app.post('/process-and-upload-session', async (req, res) => {
+  const { patientId, visitNumber, sessionNumber } = req.body;
+  console.log(`Received request to process and upload session for patient ${patientId}, visit ${visitNumber}, session ${sessionNumber}`);
+  try {
+    const result = await processAndUploadSession(patientId, visitNumber, sessionNumber);
+    console.log(`Session ${visitNumber}-${sessionNumber} processed and uploaded for patient ${patientId}`);
+    res.status(200).send(result);
+  } catch (error) {
+    console.error(`Error processing and uploading session: ${error.message}`);
+    res.status(500).send(`Error processing and uploading session: ${error.message}`);
+  }
+});
+
+app.get('/list-patients', async (req, res) => {
+  console.log('Received request to list all patients');
+  try {
+    const patients = await listPatients();
+    console.log(`Fetched list of patients: ${patients.length} found`);
+    res.status(200).send(patients);
+  } catch (error) {
+    console.error(`Error fetching patients: ${error.message}`);
+    res.status(500).send(`Error fetching patients: ${error.message}`);
+  }
+});
+
+app.get('/list-patient-sessions/:patientId', async (req, res) => {
+  const { patientId } = req.params;
+  console.log(`Received request to list sessions for patient: ${patientId}`);
+  try {
+    let sessions = await listPatientSessions(patientId);
+    sessions = sessions.map((session) => ({
+      ...session,
+      fileName: session.fileName.replace(/T/g, 'V')  // Replace T with V
+    }));
+    console.log(`Fetched sessions for patient ${patientId}: ${sessions.length} found`);
+    res.status(200).send(sessions);
+  } catch (error) {
+    console.error(`Error fetching sessions for patient ${patientId}: ${error.message}`);
+    res.status(500).send(`Error fetching sessions: ${error.message}`);
+  }
+});
+
+app.delete('/delete-session/:patientId/:fileName', async (req, res) => {
+  const { patientId, fileName } = req.params;
+  console.log(`Received request to delete session file: ${fileName} for patient: ${patientId}`);
+  try {
+    await deleteSessionFile(patientId, fileName);
+    console.log(`Session file ${fileName} deleted for patient ${patientId}`);
+    res.status(200).send(`Session file ${fileName} deleted`);
+  } catch (error) {
+    console.error(`Error deleting session file: ${error.message}`);
+    res.status(500).send(`Error deleting session: ${error.message}`);
+  }
+});
+
+app.delete('/delete-patient/:patientId', async (req, res) => {
+  const { patientId } = req.params;
+  console.log(`Received request to delete patient with ID: ${patientId}`);
+  try {
+    await deletePatientFolder(patientId);
+    console.log(`Patient ${patientId} and all associated data deleted`);
+    res.status(200).send(`Patient ${patientId} and all associated data deleted`);
+  } catch (error) {
+    console.error(`Error deleting patient ${patientId}: ${error.message}`);
+    res.status(500).send(`Error deleting patient: ${error.message}`);
+  }
+});
+
+app.get('/list-patient-char-sessions/:patientId', async (req, res) => {
+  const { patientId } = req.params;
+  try {
+    const charData = await listPatientCharSessions(patientId);
+    res.status(200).json(charData); 
+  } catch (error) {
+    console.error(`❌ Error fetching char sessions: ${error.message}`);
+    res.status(500).send(`Error fetching char sessions: ${error.message}`);
+  }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});

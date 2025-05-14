@@ -3,15 +3,10 @@ import pandas as pd
 from io import StringIO
 import numpy as np
 
-# Function to process the session data
 def process_session_data(file_content):
-    # Step 1: Read CSV from the content passed via stdin
     df = pd.read_csv(StringIO(file_content))
-    
-    # Step 2: Process the CSV data
-    df_clean = pd.DataFrame()
 
-    # Processing the data as before
+    df_clean = pd.DataFrame()
     df_clean['Timestamp (UTC)'] = pd.to_datetime(df['Timestamp (UTC)'], format='%Y-%m-%d_%H:%M:%S.%f')
     df_clean['Elapsed Time (s)'] = (df_clean['Timestamp (UTC)'] - df_clean['Timestamp (UTC)'].iloc[0]).dt.total_seconds()
     df_clean['Elapsed Time (min)'] = df_clean['Elapsed Time (s)'] / 60
@@ -37,6 +32,10 @@ def process_session_data(file_content):
     df_clean['VelMag'] = np.sqrt(df_clean['WheelVelL'] ** 2 + df_clean['WheelVelR'] ** 2)
     df_clean['DispMag'] = np.sqrt(df_clean['WheelDispL'] ** 2 + df_clean['WheelDispR'] ** 2)
     df_clean['AvgVel'] = (df_clean['WheelVelL'] + df_clean['WheelVelR']) / 2
+ 
+    return df_clean.to_csv(index=False)
 
-    # Step 3: Return the processed CSV data
-    return df_clean.to_csv(index=False)  # This returns the processed CSV as a string
+if __name__ == "__main__":
+    file_content = sys.stdin.read()
+    processed_data = process_session_data(file_content)
+    sys.stdout.write(processed_data)

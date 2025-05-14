@@ -7,10 +7,19 @@ function HomePage() {
   const [patients, setPatients] = useState([]);
   const [selectedPatient, setSelectedPatient] = useState('');
 
-  // Load patients from localStorage
+  // Fetch patients from the backend API on component mount
   useEffect(() => {
-    const storedPatients = JSON.parse(localStorage.getItem('patients')) || [];
-    setPatients(storedPatients);
+    const fetchPatients = async () => {
+      try {
+        const response = await fetch('http://localhost:3000/list-patients');  // Change the URL to your backend
+        const data = await response.json();
+        setPatients(data);  // Set patients in state
+      } catch (error) {
+        console.error('Error fetching patients:', error);
+      }
+    };
+
+    fetchPatients();
   }, []);
 
   // Handle selecting a patient and navigating to their dashboard
@@ -48,9 +57,9 @@ function HomePage() {
         {patients.length === 0 ? (
           <MenuItem disabled>No patients found</MenuItem>
         ) : (
-          patients.map((patient, index) => (
-            <MenuItem key={index} value={patient.name}>
-              {patient.name}
+          patients.map((patient) => (
+            <MenuItem key={patient.id} value={patient.id}>
+              {patient.id}
             </MenuItem>
           ))
         )}
