@@ -439,7 +439,7 @@ function DashboardPage() {
           variant="outlined"
           color="primary"
           sx={{ width: '100%' }}
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/home')}
         >
           Go Back
         </Button>

@@ -2,17 +2,20 @@ import React, { useState } from 'react';
 import { Box, TextField, Typography, Button, Paper, Alert, Link } from '@mui/material';
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from './firebase';
+import { useNavigate } from 'react-router-dom'; // ⬅️ for redirect
 
-function LoginPage({ onLogin }) {
+function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [resetSent, setResetSent] = useState(false);
 
+  const navigate = useNavigate(); // ⬅️ navigate after login
+
   const handleLogin = async () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      onLogin();
+      navigate('/home'); // ⬅️ redirect to home/dashboard
     } catch (err) {
       console.error(err);
       setErrorMsg("Login failed. Please check your email and password.");
@@ -36,7 +39,15 @@ function LoginPage({ onLogin }) {
 
   return (
     <Box sx={{ height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#f4f6f8' }}>
-      <Paper elevation={3} sx={{ padding: 4, width: 350, textAlign: 'center' }}>
+      <Paper
+        component="form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleLogin(); // ⬅️ trigger login on Enter
+        }}
+        elevation={3}
+        sx={{ padding: 4, width: 350, textAlign: 'center' }}
+      >
         <Typography variant="h5" gutterBottom>Sign In</Typography>
 
         {errorMsg && <Alert severity="error" sx={{ mb: 2 }}>{errorMsg}</Alert>}
@@ -65,7 +76,7 @@ function LoginPage({ onLogin }) {
           variant="contained"
           color="primary"
           sx={{ mt: 2, mb: 1 }}
-          onClick={handleLogin}
+          onClick={handleLogin} // ⬅️ manual click login
         >
           Login
         </Button>

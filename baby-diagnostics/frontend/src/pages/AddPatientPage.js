@@ -211,7 +211,7 @@ function AddPatientPage() {
         </List>
       )}
 
-      <Button variant="outlined" color="primary" sx={{ marginTop: "20px", width: "200px" }} onClick={() => navigate("/")}>
+      <Button variant="outlined" color="primary" sx={{ marginTop: "20px", width: "200px" }} onClick={() => navigate("/home")}>
         Go Back
       </Button>
 
