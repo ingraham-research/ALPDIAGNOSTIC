@@ -18,7 +18,7 @@ app.use(cors({
   origin: 'https://alpdiagnostic.vercel.app', // CHANGE HERE
   methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type'],
-  credentials: true
+  credentials: false
 }));
 
 app.use(bodyParser.json());
