@@ -168,6 +168,8 @@ function AddPatientPage() {
       return;
     }
 
+    setShowFileDialog(false);
+
     setSyncLoading((prev) => ({ ...prev, [pendingPatientId]: true }));
 
     
