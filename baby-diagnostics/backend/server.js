@@ -15,7 +15,7 @@ const {
 const app = express();
 
 app.use(cors({
-  origin: 'http://localhost:3001', // CHANGE HERE
+  origin: 'https://alpdiagnostic.onrender.com', // CHANGE HERE
   methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type'],
   credentials: true
