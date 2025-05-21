@@ -356,10 +356,11 @@ function AddPatientPage() {
       whiteSpace: 'pre-line',
     }}
   >
-    We’re sorry!
-    {'\n'}  • Please check that the power button is lit blue.
-    {'\n'}  • Please check that the EM Mini blinks when recording.
-    {'\n'}  • Please try to record a sesssion again.
+    We’re sorry! This could be a wifi error, but here are some troubleshooting suggestions:
+    {'\n'} • Please check that the power button is lit blue before recording.
+    {'\n'} • Please check that the EM Mini blinks when recording.
+    {'\n'} • Please try to sync again.
+    {'\n'} • Please try to record a session again.
 
   </Typography>
   </Box>
