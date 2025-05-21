@@ -108,7 +108,7 @@ function HomePage() {
       <Button
         variant="text"
         color="error"
-        sx={{ marginTop: '20px', width: '200px' }}
+        sx={{ marginTop: '50px', width: '200px' }}
         onClick={handleLogout}
       >
         Log Out

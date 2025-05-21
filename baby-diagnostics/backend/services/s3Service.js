@@ -114,20 +114,58 @@ const deletePatientFolder = async (patientId) => {
   }
 };
 
-const getLatestFileFromSource = async () => {
+// const getLatestFileFromSource = async () => {
+//   const params = { Bucket: SOURCE_BUCKET, Prefix: `explorer-mini-logger-2/` };
+//   try {
+//     const data = await sourceS3.send(new ListObjectsV2Command(params));
+//     if (!data.Contents || data.Contents.length === 0) {
+//       return null;
+//     }
+//     const latestFile = data.Contents.sort((a, b) => new Date(b.LastModified) - new Date(a.LastModified))[0];
+//     console.log('📄 Latest file selected:', latestFile.Key);
+//     const file = await sourceS3.send(new GetObjectCommand({ Bucket: SOURCE_BUCKET, Key: latestFile.Key }));
+//     const fileData = await file.Body.transformToString("utf-8");
+//     return { fileData, fileName: latestFile.Key.split("/").pop() };
+//   } catch (error) {
+//     console.error(`❌ Error fetching the latest file from source: ${error.message}`);
+//     return null;
+//   }
+// };
+
+const getRecentFilesFromSource = async (count = 3) => {
   const params = { Bucket: SOURCE_BUCKET, Prefix: `explorer-mini-logger-2/` };
+
   try {
     const data = await sourceS3.send(new ListObjectsV2Command(params));
     if (!data.Contents || data.Contents.length === 0) {
-      return null;
+      return [];
     }
-    const latestFile = data.Contents.sort((a, b) => new Date(b.LastModified) - new Date(a.LastModified))[0];
-    console.log('📄 Latest file selected:', latestFile.Key);
-    const file = await sourceS3.send(new GetObjectCommand({ Bucket: SOURCE_BUCKET, Key: latestFile.Key }));
-    const fileData = await file.Body.transformToString("utf-8");
-    return { fileData, fileName: latestFile.Key.split("/").pop() };
+
+    // Sort by LastModified descending and take top N
+    const recentFiles = data.Contents
+      .sort((a, b) => new Date(b.LastModified) - new Date(a.LastModified))
+      .slice(0, count)
+      .map(file => ({
+        key: file.Key,
+        fileName: file.Key.split("/").pop(),
+        lastModified: file.LastModified
+      }));
+
+    return recentFiles;
+
   } catch (error) {
-    console.error(`❌ Error fetching the latest file from source: ${error.message}`);
+    console.error(`❌ Error fetching recent files: ${error.message}`);
+    return [];
+  }
+};
+
+const fetchFileContent = async (fileKey) => {
+  try {
+    const file = await sourceS3.send(new GetObjectCommand({ Bucket: SOURCE_BUCKET, Key: fileKey }));
+    const fileData = await file.Body.transformToString("utf-8");
+    return { fileData, fileName: fileKey.split("/").pop() };
+  } catch (error) {
+    console.error(`❌ Error fetching selected file: ${error.message}`);
     return null;
   }
 };
@@ -165,13 +203,14 @@ const runPythonScript = (fileContent, code) => {
   });
 };
 
-const processAndUploadSession = async (patientId, visitNumber, sessionNumber) => {
-  const session = await getLatestFileFromSource();
+const processAndUploadSession = async (patientId, sessionNumber, fileName = null) => {
+  console.log(`📄 Using selected file: ${fileName}`);
+  const session = await fetchFileContent(`explorer-mini-logger-2/${fileName}`);
   if (!session) {
     console.error("❌ No session file found.");
     return "Error: No session file found.";
   }
-  const newFileName = `${patientId}_${visitNumber}_${sessionNumber}_raw.csv`;
+  const newFileName = `${patientId}_${sessionNumber}_raw.csv`;
   const uploadParamsRaw = {
     Bucket: DEST_BUCKET,
     Key: `${patientId}/raw/${newFileName}`,
@@ -216,23 +255,19 @@ const listPatientCharSessions = async (patientId) => {
     const sessions = data.Contents
       .map((file) => {
         const fileName = file.Key.split("/").pop();
-        const match = fileName.match(/T(\d+)_S(\d+)_char\.csv/);
+        const match = fileName.match(/S(\d+)_char\.csv/);
         if (match) {
           return {
             fileName,
             key: file.Key,
-            t: parseInt(match[1], 10),
-            s: parseInt(match[2], 10),
+            s: parseInt(match[1], 10),
             url: `https://${DEST_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${file.Key}`,
           };
         }
         return null;
       })
       .filter((session) => session !== null);
-    sessions.sort((a, b) => {
-      if (a.t === b.t) return a.s - b.s;
-      return a.t - b.t;
-    });
+    sessions.sort((a, b) => a.s - b.s);
     const combinedData = [];
     let header = null;
     for (let fileIndex = 0; fileIndex < sessions.length; fileIndex++) {
@@ -252,7 +287,6 @@ const listPatientCharSessions = async (patientId) => {
       header.forEach((colName, j) => {
         rowObject[colName] = rowValues[j] || '';
       });
-      rowObject.sessionT = session.t;
       rowObject.sessionS = session.s;
       combinedData.push(rowObject);
     }
@@ -263,6 +297,7 @@ const listPatientCharSessions = async (patientId) => {
   }
 };
 
+
 module.exports = {
   createPatientFolder,
   processAndUploadSession,
@@ -271,4 +306,7 @@ module.exports = {
   deleteSessionFile,
   deletePatientFolder,
   listPatientCharSessions,
+  getRecentFilesFromSource,   
+  fetchFileContent            
 };
+

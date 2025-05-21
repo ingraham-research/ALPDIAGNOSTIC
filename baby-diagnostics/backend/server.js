@@ -1,12 +1,21 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const { createPatientFolder, processAndUploadSession, listPatients, listPatientSessions, deleteSessionFile, deletePatientFolder, listPatientCharSessions } = require('./services/s3Service');
+const {
+  createPatientFolder,
+  processAndUploadSession,
+  listPatients,
+  listPatientSessions,
+  deleteSessionFile,
+  deletePatientFolder,
+  listPatientCharSessions,
+  getRecentFilesFromSource, // ✅ Import it here too
+} = require('./services/s3Service');
 
 const app = express();
 
 app.use(cors({
-  origin: 'https://alpdiagnostic.vercel.app',
+  origin: 'http://localhost:3001', // CHANGE HERE
   methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type'],
   credentials: true
@@ -33,15 +42,17 @@ app.post('/create-patient', async (req, res) => {
 });
 
 app.post('/process-and-upload-session', async (req, res) => {
-  const { patientId, visitNumber, sessionNumber } = req.body;
-  console.log(`Received request to process and upload session for patient ${patientId}, visit ${visitNumber}, session ${sessionNumber}`);
+  const { patientId, sessionNumber, fileName } = req.body;
+
+  console.log(`Received request to process and upload session for patient ${patientId}, session ${sessionNumber}, file ${fileName}`);
+
   try {
-    const result = await processAndUploadSession(patientId, visitNumber, sessionNumber);
-    console.log(`Session ${visitNumber}-${sessionNumber} processed and uploaded for patient ${patientId}`);
+    const result = await processAndUploadSession(patientId, sessionNumber, fileName);
+    console.log(`✅ Session ${sessionNumber} uploaded for patient ${patientId} from file ${fileName}`);
     res.status(200).send(result);
   } catch (error) {
-    console.error(`Error processing and uploading session: ${error.message}`);
-    res.status(500).send(`Error processing and uploading session: ${error.message}`);
+    console.error(`❌ Error processing and uploading session: ${error.message}`);
+    res.status(500).send(`Error: ${error.message}`);
   }
 });
 
@@ -62,10 +73,6 @@ app.get('/list-patient-sessions/:patientId', async (req, res) => {
   console.log(`Received request to list sessions for patient: ${patientId}`);
   try {
     let sessions = await listPatientSessions(patientId);
-    sessions = sessions.map((session) => ({
-      ...session,
-      fileName: session.fileName.replace(/T/g, 'V')  // Replace T with V
-    }));
     console.log(`Fetched sessions for patient ${patientId}: ${sessions.length} found`);
     res.status(200).send(sessions);
   } catch (error) {
@@ -110,6 +117,17 @@ app.get('/list-patient-char-sessions/:patientId', async (req, res) => {
     res.status(500).send(`Error fetching char sessions: ${error.message}`);
   }
 });
+
+app.get('/recent-source-files', async (req, res) => {
+  try {
+    const recentFiles = await getRecentFilesFromSource(3);
+    res.status(200).json(recentFiles);
+  } catch (error) {
+    console.error(`❌ Error fetching recent source files: ${error.message}`);
+    res.status(500).send(`Error fetching recent files: ${error.message}`);
+  }
+});
+
 
 const PORT = 3000;
 app.listen(PORT, () => {

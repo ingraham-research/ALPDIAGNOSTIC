@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Typography, Button, Box, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
+import { Typography, Button, Box, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions, ListItemButton } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
 function AddPatientPage() {
@@ -11,6 +11,17 @@ function AddPatientPage() {
   const [syncLoading, setSyncLoading] = useState({});
   const [showDeleteDialog, setShowDeleteDialog] = useState(false); // For Delete Confirmation
   const navigate = useNavigate();
+
+  const [recentFiles, setRecentFiles] = useState([]);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [showFileDialog, setShowFileDialog] = useState(false);
+  const [pendingPatientId, setPendingPatientId] = useState('');
+  const [pendingSessionNumber, setPendingSessionNumber] = useState('');
+
+  const [showSessionHelp, setShowSessionHelp] = useState(false);
+
+
+
 
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
   
@@ -90,46 +101,101 @@ function AddPatientPage() {
     setLoading(false);
   };
 
+  // const handleSyncLatestFile = async (patientId) => {
+  //   const sessionNumber = prompt("Please enter the session number (e.g., S1, S2):");
+
+  //   if (!sessionNumber) {
+  //     alert("❌ Session number is required!");
+  //     return;
+  //   }
+
+  //   if (!/S\d+/i.test(sessionNumber)) {
+  //     alert("❌ Invalid format for session number. Please follow the format 'S1', 'S2'.");
+  //     return;
+  //   }
+
+  //   console.log(`Syncing latest file for patient ${patientId} with session ${sessionNumber}`); // Debugging message
+
+  //   setSyncLoading((prev) => ({ ...prev, [patientId]: true }));
+
+  //   const response = await fetch(`${BACKEND_URL}/process-and-upload-session`, {
+  //     method: 'POST',
+  //     headers: { 'Content-Type': 'application/json' },
+  //     credentials: 'omit',
+  //     body: JSON.stringify({ patientId, sessionNumber })
+  //   });
+  //   const message = await response.text();
+  //   console.log("Response from sync request:", message); // Debugging message
+
+  //   if (response.ok) {
+  //     alert(`✅ ${message}`);
+  //   } else {
+  //     alert(`❌ Sync failed for ${patientId}`);
+  //     setSyncLoading((prev) => ({ ...prev, [patientId]: false }));
+  //     return;
+  //   }
+
+  //   setSyncLoading((prev) => ({ ...prev, [patientId]: false }));
+  //   loadPatients();
+  // };
+
   const handleSyncLatestFile = async (patientId) => {
-    let visitNumber = prompt("Please enter the visit number (e.g., V1, V2):");
     const sessionNumber = prompt("Please enter the session number (e.g., S1, S2):");
 
-    if (!visitNumber || !sessionNumber) {
-      alert("❌ Visit number and session number are required!");
+    if (!sessionNumber || !/S\d+$/i.test(sessionNumber)) {
+      alert("❌ Invalid session number format.");
       return;
     }
 
-    if (!/V\d+/i.test(visitNumber) || !/S\d+/i.test(sessionNumber)) {
-      alert("❌ Invalid format for visit number or session number. Please follow the format 'V1', 'S1'.");
+    setPendingPatientId(patientId);
+    setPendingSessionNumber(sessionNumber);
+    setShowSessionHelp(false); 
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/recent-source-files`);
+      const files = await response.json();
+      setRecentFiles(files);
+      setShowFileDialog(true);  // open file picker
+    } catch (error) {
+      console.error("❌ Error fetching recent files:", error.message);
+      alert("Failed to load recent files.");
+    }
+  };
+
+  const confirmFileSync = async () => {
+    if (!selectedFile) {
+      alert("Please select a file.");
       return;
     }
 
-    console.log(`Syncing latest file for patient ${patientId} with visit ${visitNumber} and session ${sessionNumber}`); // Debugging message
+    setSyncLoading((prev) => ({ ...prev, [pendingPatientId]: true }));
+
     
-    visitNumber = visitNumber.replace('V', 'T')
-
-    setSyncLoading((prev) => ({ ...prev, [patientId]: true }));
 
     const response = await fetch(`${BACKEND_URL}/process-and-upload-session`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'omit',
-      body: JSON.stringify({ patientId, visitNumber, sessionNumber })
+      body: JSON.stringify({
+        patientId: pendingPatientId,
+        sessionNumber: pendingSessionNumber,
+        fileName: selectedFile.fileName
+      }),
     });
+
     const message = await response.text();
-    console.log("Response from sync request:", message); // Debugging message
 
     if (response.ok) {
       alert(`✅ ${message}`);
     } else {
-      alert(`❌ Sync failed for ${patientId}`);
-      setSyncLoading((prev) => ({ ...prev, [patientId]: false }));
-      return;
+      alert(`❌ Sync failed: ${message}`);
     }
 
-    setSyncLoading((prev) => ({ ...prev, [patientId]: false }));
+    setSyncLoading((prev) => ({ ...prev, [pendingPatientId]: false }));
     loadPatients();
   };
+
+
 
   const handleDeletePatient = async (patientId) => {
     console.log(`Preparing to delete patient with ID: ${patientId}`); // Debugging message
@@ -231,6 +297,82 @@ function AddPatientPage() {
         </DialogActions>
       </Dialog>
 
+      {/* File Selection Dialog */}
+      <Dialog open={showFileDialog} onClose={() => setShowFileDialog(false)}>
+        <DialogTitle>Select File to Sync</DialogTitle>
+        <DialogContent>
+          <List>
+            {recentFiles.map((file) => (
+              <ListItem key={file.fileName} disablePadding>
+                <ListItemButton
+                  selected={selectedFile?.fileName === file.fileName}
+                  onClick={() => setSelectedFile(file)}
+                  sx={{
+                    borderRadius: '12px',
+                    '&.Mui-selected': {
+                      backgroundColor: '#1976d2',  // Medium blue
+                      color: 'white',
+                    },
+                    '&.Mui-selected:hover': {
+                      backgroundColor: '#1565c0',  // Slightly darker on hover
+                    },
+                  }}
+                >
+                  <ListItemText
+                    primary={file.fileName}
+                    secondary={`Last Modified: ${new Date(file.lastModified).toLocaleString()}`}
+                  />
+                </ListItemButton>
+              </ListItem>
+            ))}
+          </List>
+        <Typography variant="body2" sx={{ mt: 2, display: 'flex', alignItems: 'center', color: 'primary.main' }}>
+  <Button
+    size="small"
+    onClick={() => setShowSessionHelp(!showSessionHelp)}
+    sx={{ ml: 1 }}
+    color="primary"
+  >
+    {showSessionHelp ? 'Hide Help' : 'Didn’t find your session?'}
+  </Button>
+</Typography>
+
+{showSessionHelp && (
+  <Box
+    sx={{
+      mt:1,
+      mb: 2,
+      pl: 3, 
+    }}
+  >
+  <Typography
+    component="div"
+    sx={{
+      fontSize: '0.85rem', 
+      color: 'gray',
+      fontFamily: `'Roboto', 'Helvetica', 'Arial', 'sans-serif'`,
+      whiteSpace: 'pre-line',
+    }}
+  >
+    We’re sorry!
+    {'\n'}  • Please check that the power button is lit blue.
+    {'\n'}  • Please check that the EM Mini blinks when recording.
+    {'\n'}  • Please try to record a sesssion again.
+
+  </Typography>
+  </Box>
+)}
+
+
+
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowFileDialog(false)}>Cancel</Button>
+          <Button onClick={confirmFileSync} color="primary">Sync Selected File</Button>
+        </DialogActions>
+      </Dialog>
+
+
       {/* Patient Sessions Dialog */}
       <Dialog open={showDialog} onClose={() => setShowDialog(false)}>
         <DialogTitle>Sessions for {selectedPatient}</DialogTitle>
@@ -267,3 +409,5 @@ function AddPatientPage() {
 }
 
 export default AddPatientPage;
+ 
+

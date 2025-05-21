@@ -92,10 +92,8 @@ function DashboardPage() {
         setCharData(data);
 
         if (data.length > 0) {
-          const sorted = [...data].sort((a, b) => {
-            if (a.sessionT === b.sessionT) return b.sessionS - a.sessionS;
-            return b.sessionT - a.sessionT;
-          });
+          const sorted = [...data].sort((a, b) => b.sessionS - a.sessionS);
+
 
           const latest = sorted[0];
 
@@ -111,7 +109,7 @@ function DashboardPage() {
           });
 
           const keys = Object.keys(latest).filter(key =>
-            !['sessionT', 'sessionS', 'Timestamp', 'Elapsed Time (s)', 'Elapsed Time (min)'].includes(key)
+            !['sessionS', 'Timestamp', 'Elapsed Time (s)', 'Elapsed Time (min)'].includes(key)
           );
 
           setAvailableChars(keys);
@@ -127,13 +125,10 @@ function DashboardPage() {
 
 
   const sortedData = [...charData].sort((a, b) => {
-    if (a.Timestamp && b.Timestamp) {
-      return new Date(a.Timestamp) - new Date(b.Timestamp);
-    }
-    if (a.sessionT === b.sessionT) {
-      return a.sessionS - b.sessionS;
-    }
-    return a.sessionT - b.sessionT;
+  if (a.Timestamp && b.Timestamp) {
+    return new Date(a.Timestamp) - new Date(b.Timestamp);
+  }
+  return a.sessionS - b.sessionS;
   });
 
   const modifiedData = sortedData.map(item => ({
