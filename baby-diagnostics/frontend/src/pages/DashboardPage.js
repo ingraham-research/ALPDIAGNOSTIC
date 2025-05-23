@@ -137,7 +137,7 @@ function DashboardPage() {
   useEffect(() => {
     const timeout = setTimeout(() => {
       setShowChart(true);
-    }, 1000); // delay lets React hydrate before rendering chart
+    }, 100); // delay lets React hydrate before rendering chart
 
     return () => clearTimeout(timeout);
   }, []);
