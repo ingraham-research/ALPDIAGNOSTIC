@@ -135,9 +135,11 @@ function DashboardPage() {
   }, [patientName]);
 
   useEffect(() => {
-    requestAnimationFrame(() => {
+    const timeout = setTimeout(() => {
       setShowChart(true);
-    });
+    }, 100); // delay lets React hydrate before rendering chart
+
+    return () => clearTimeout(timeout);
   }, []);
 
 
