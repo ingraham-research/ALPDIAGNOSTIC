@@ -271,6 +271,9 @@ const modifiedData = sortedData.map(item => {
                   strokeWidth={3}
                   dot={true}
                   activeDot={{ r: 5 }}
+                  isAnimationActive={true}            // ✅ enables animation
+                  animationBegin={0}                  // ✅ delay before animation starts (ms)
+                  animationDuration={800}            // ✅ animation duration (ms)
                 />
               ))}
             </LineChart>
