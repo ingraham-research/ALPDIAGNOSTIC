@@ -4,7 +4,7 @@
 // change image to stage, change the prediction to stage
 // visit 1 vist 2 on the y axis 
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Typography,
@@ -150,23 +150,23 @@ function DashboardPage() {
   return a.sessionS - b.sessionS;
   });
 
-const modifiedData = sortedData.map(item => {
-  const parsed = {};
-
-  selectedMetrics.forEach(metric => {
-    parsed[metric] = isNaN(parseFloat(item[metric]))
-      ? 0
-      : parseFloat(item[metric]) + Math.random() * 0.00001;  // 👈 tiny noise
+const modifiedData = useMemo(() => {
+  return sortedData.map(item => {
+    const parsed = {};
+    selectedMetrics.forEach(metric => {
+      parsed[metric] = isNaN(parseFloat(item[metric]))
+        ? 0
+        : parseFloat(item[metric]) + Math.random() * 0.00001;
+    });
+    return {
+      ...item,
+      ...parsed,
+      sessionLabel: item.sessionS && item.posture
+        ? `S${item.sessionS} (${item.posture})`
+        : `S${item.sessionS}`,
+    };
   });
-
-  return {
-    ...item,
-    ...parsed,
-    sessionLabel: item.sessionS && item.posture
-      ? `S${item.sessionS} (${item.posture})`
-      : `S${item.sessionS}`,
-  };
-});
+}, [sortedData, selectedMetrics]);
 
 
   //HOLD
