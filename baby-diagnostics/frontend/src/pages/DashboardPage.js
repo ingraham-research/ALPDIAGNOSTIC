@@ -131,12 +131,21 @@ function DashboardPage() {
   return a.sessionS - b.sessionS;
   });
 
-const modifiedData = sortedData.map(item => ({
-  ...item,
-  sessionLabel: item.sessionS && item.posture
-    ? `S${item.sessionS} (${item.posture})`
-    : `S${item.sessionS}`
-}));
+const modifiedData = sortedData.map(item => {
+  const parsed = {};
+
+  selectedMetrics.forEach(metric => {
+    parsed[metric] = item[metric] !== '' ? parseFloat(item[metric]) : 0;
+  });
+
+  return {
+    ...item,
+    ...parsed,
+    sessionLabel: item.sessionS && item.posture
+      ? `S${item.sessionS} (${item.posture})`
+      : `S${item.sessionS}`,
+  };
+});
 
 
   //HOLD
