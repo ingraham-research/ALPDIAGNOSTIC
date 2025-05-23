@@ -35,6 +35,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
+
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
 const MenuProps = {
@@ -73,6 +74,13 @@ function DashboardPage() {
   };
 
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
 
   useEffect(() => {
     const fetchCharData = async () => {
@@ -217,67 +225,60 @@ const modifiedData = sortedData.map(item => {
         </Paper>
 
         <Paper sx={{ padding: '20px' }}>
-          <ResponsiveContainer width="100%" height={400}>
-            <LineChart data={modifiedData} margin={{ top: 30, right: 40, left: 10, bottom: 10 }}>
-              <CartesianGrid strokeDasharray="4 4" stroke="#ccc" />
-              <XAxis 
-                dataKey="sessionLabel" tick={{ dy: 5 }} 
-                // HOLD
-                // label={{ value: 'Visit Session', position: 'left', dy:30, dx:67}} 
-              />
-              <YAxis
-                domain={
-                  [0, Math.ceil((globalYMax + 1) / 10) * 10]
-                }
-                allowDataOverflow={false}
-                label={{
-                  value: selectedMetrics.some(metric => metric.includes('hist')) ? '%' :
-                    selectedMetrics.some(metric => metric.includes('time')) ? 'Minutes' :
-                    selectedMetrics.some(metric => metric.includes('duration')) ? 'Seconds' :
-                    selectedMetrics.some(metric => metric.includes('path') || metric.includes('length')) ? 'Feet' :
-                    selectedMetrics.some(metric => metric.includes('num') || metric.includes('joy') || metric.includes('attempts')) ? 'Count' :
-                    '',
-                  angle: -90,
-                  position: 'insideLeft',
-                  offset: 10,
-                  style: { textAnchor: 'middle', fontSize: 15 }
-                }}
-              />
-
-              <Tooltip 
-                labelFormatter={(label) => `Session: ${label}`}
-                formatter={(value, name) => {
-                  const label = metricLabels[name] || name;
-                  const numericValue = parseFloat(value);
-
-                  let suffix = '';
-                  if (name.includes('Front') || name.includes('Back')) suffix = '%';
-                  else if (name.includes('Time')) suffix = ' min';
-                  else if (name.includes('Duration')) suffix = ' s';
-                  else if (name.includes('Distance')) suffix = ' ft';
-                  else if (name.includes('Joystick')) suffix = ' bouts';
-
-                  return [isNaN(numericValue) ? value : `${numericValue.toFixed(1)}${suffix}`, label];
-                }}
-              />
-              <Legend wrapperStyle={{ fontSize: '14px' }} />
-              {selectedMetrics.map((metric, index) => (
-                <Line
-                  key={metric}
-                  type="monotone"
-                  dataKey={metric}
-                  stroke={colors[index % colors.length]}
-                  name={metricLabels[metric]}
-                  strokeWidth={3}
-                  dot={true}
-                  activeDot={{ r: 5 }}
-                  isAnimationActive={true}            // ✅ enables animation
-                  animationBegin={0}                  // ✅ delay before animation starts (ms)
-                  animationDuration={800}            // ✅ animation duration (ms)
+          {mounted && (
+            <ResponsiveContainer width="100%" height={400}>
+              <LineChart data={modifiedData} margin={{ top: 30, right: 40, left: 10, bottom: 10 }}>
+                <CartesianGrid strokeDasharray="4 4" stroke="#ccc" />
+                <XAxis dataKey="sessionLabel" tick={{ dy: 5 }} />
+                <YAxis
+                  domain={[0, Math.ceil((globalYMax + 1) / 10) * 10]}
+                  allowDataOverflow={false}
+                  label={{
+                    value: selectedMetrics.some(metric => metric.includes('hist')) ? '%' :
+                      selectedMetrics.some(metric => metric.includes('time')) ? 'Minutes' :
+                      selectedMetrics.some(metric => metric.includes('duration')) ? 'Seconds' :
+                      selectedMetrics.some(metric => metric.includes('path') || metric.includes('length')) ? 'Feet' :
+                      selectedMetrics.some(metric => metric.includes('num') || metric.includes('joy') || metric.includes('attempts')) ? 'Count' : '',
+                    angle: -90,
+                    position: 'insideLeft',
+                    offset: 10,
+                    style: { textAnchor: 'middle', fontSize: 15 }
+                  }}
                 />
-              ))}
-            </LineChart>
-          </ResponsiveContainer>
+                <Tooltip
+                  labelFormatter={(label) => `Session: ${label}`}
+                  formatter={(value, name) => {
+                    const label = metricLabels[name] || name;
+                    const numericValue = parseFloat(value);
+                    let suffix = '';
+                    if (name.includes('Front') || name.includes('Back')) suffix = '%';
+                    else if (name.includes('Time')) suffix = ' min';
+                    else if (name.includes('Duration')) suffix = ' s';
+                    else if (name.includes('Distance')) suffix = ' ft';
+                    else if (name.includes('Joystick')) suffix = ' bouts';
+                    return [isNaN(numericValue) ? value : `${numericValue.toFixed(1)}${suffix}`, label];
+                  }}
+                />
+                <Legend wrapperStyle={{ fontSize: '14px' }} />
+                {selectedMetrics.map((metric, index) => (
+                  <Line
+                    key={metric}
+                    type="monotone"
+                    dataKey={metric}
+                    stroke={colors[index % colors.length]}
+                    name={metricLabels[metric]}
+                    strokeWidth={3}
+                    dot={true}
+                    activeDot={{ r: 5 }}
+                    isAnimationActive={true}
+                    animationBegin={0}
+                    animationDuration={1500}
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          )}
+
         </Paper>
 
         <Box sx={{ marginTop: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
