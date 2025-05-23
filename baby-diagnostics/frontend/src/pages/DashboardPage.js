@@ -135,12 +135,11 @@ function DashboardPage() {
   }, [patientName]);
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      setShowChart(true);
-    }, 100); // delay lets React hydrate before rendering chart
-
-    return () => clearTimeout(timeout);
-  }, []);
+    if (charData.length > 0 && selectedMetrics.length > 0) {
+      const timeout = setTimeout(() => setShowChart(true), 100);
+      return () => clearTimeout(timeout);
+    }
+  }, [charData, selectedMetrics]);
 
 
 
@@ -155,7 +154,9 @@ const modifiedData = sortedData.map(item => {
   const parsed = {};
 
   selectedMetrics.forEach(metric => {
-    parsed[metric] = item[metric] !== '' ? parseFloat(item[metric]) : 0;
+    parsed[metric] = isNaN(parseFloat(item[metric]))
+      ? 0
+      : parseFloat(item[metric]) + Math.random() * 0.00001;  // 👈 tiny noise
   });
 
   return {
