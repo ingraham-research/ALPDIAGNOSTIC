@@ -21,6 +21,13 @@ app.use(cors({
   credentials: false
 }));
 
+// app.use(cors({
+//   origin: 'http://localhost:3001', // CHANGE HERE
+//   methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+//   allowedHeaders: ['Content-Type'],
+//   credentials: false
+// }));
+
 app.use(bodyParser.json());
 
 app.get('/', (req, res) => {
@@ -42,13 +49,13 @@ app.post('/create-patient', async (req, res) => {
 });
 
 app.post('/process-and-upload-session', async (req, res) => {
-  const { patientId, sessionNumber, fileName } = req.body;
+  const { patientId, sessionNumber, fileName, sitOrStand = 'sit' } = req.body;
 
-  console.log(`Received request to process and upload session for patient ${patientId}, session ${sessionNumber}, file ${fileName}`);
+  console.log(`Received request to process and upload session for patient ${patientId}, session ${sessionNumber}, file ${fileName}, posture ${sitOrStand}`);
 
   try {
-    const result = await processAndUploadSession(patientId, sessionNumber, fileName);
-    console.log(`✅ Session ${sessionNumber} uploaded for patient ${patientId} from file ${fileName}`);
+    const result = await processAndUploadSession(patientId, sessionNumber, fileName, sitOrStand);
+    console.log(`✅ Session ${sessionNumber} (${sitOrStand}) uploaded for patient ${patientId} from file ${fileName}`);
     res.status(200).send(result);
   } catch (error) {
     console.error(`❌ Error processing and uploading session: ${error.message}`);

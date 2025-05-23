@@ -203,37 +203,43 @@ const runPythonScript = (fileContent, code) => {
   });
 };
 
-const processAndUploadSession = async (patientId, sessionNumber, fileName = null) => {
+const processAndUploadSession = async (patientId, sessionNumber, fileName = null, sitOrStand = 'sit') => {
   console.log(`📄 Using selected file: ${fileName}`);
   const session = await fetchFileContent(`explorer-mini-logger-2/${fileName}`);
   if (!session) {
     console.error("❌ No session file found.");
     return "Error: No session file found.";
   }
-  const newFileName = `${patientId}_${sessionNumber}_raw.csv`;
+
+  const baseName = `${patientId}_${sessionNumber}_${sitOrStand}`;
+  const rawFileName = `${baseName}_raw.csv`;
   const uploadParamsRaw = {
     Bucket: DEST_BUCKET,
-    Key: `${patientId}/raw/${newFileName}`,
+    Key: `${patientId}/raw/${rawFileName}`,
     Body: session.fileData,
     ContentType: "text/csv",
   };
+
   const processedData = await runPythonScript(session.fileData, 0);
-  const processedFileName = newFileName.replace(/_raw/g, "_processed");
+  const processedFileName = `${baseName}_processed.csv`;
   const uploadParamsProcessed = {
     Bucket: DEST_BUCKET,
     Key: `${patientId}/processed/${processedFileName}`,
     Body: processedData,
     ContentType: "text/csv",
   };
+
   const charData = await runPythonScript(processedData, 1);
-  const charFileName = newFileName.replace(/_raw/g, "_char");
+  const charFileName = `${baseName}_char.csv`;
   const uploadParamsChar = {
     Bucket: DEST_BUCKET,
     Key: `${patientId}/char/${charFileName}`,
     Body: charData,
     ContentType: "text/csv",
   };
-  const finalFileName = newFileName.replace(/_raw/g, "").replace('T', 'V');
+
+  const finalFileName = `${patientId}_${sessionNumber}_${sitOrStand}.csv`;
+
   try {
     await destS3.send(new PutObjectCommand(uploadParamsRaw));
     await destS3.send(new PutObjectCommand(uploadParamsProcessed));
@@ -245,6 +251,7 @@ const processAndUploadSession = async (patientId, sessionNumber, fileName = null
   }
 };
 
+
 const listPatientCharSessions = async (patientId) => {
   const params = { Bucket: DEST_BUCKET, Prefix: `${patientId}/char/` };
   try {
@@ -252,50 +259,63 @@ const listPatientCharSessions = async (patientId) => {
     if (!data.Contents || data.Contents.length === 0) {
       return [];
     }
+
     const sessions = data.Contents
       .map((file) => {
         const fileName = file.Key.split("/").pop();
-        const match = fileName.match(/S(\d+)_char\.csv/);
+
+        // Updated regex to match: S3_sit_char.csv or S4_stand_char.csv
+        const match = fileName.match(/S(\d+)_(sit|stand)_char\.csv/);
         if (match) {
           return {
             fileName,
             key: file.Key,
             s: parseInt(match[1], 10),
+            posture: match[2],  // 'sit' or 'stand'
             url: `https://${DEST_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${file.Key}`,
           };
         }
         return null;
       })
       .filter((session) => session !== null);
-    sessions.sort((a, b) => a.s - b.s);
+
+    // Sort first by session number, then sit before stand
+    sessions.sort((a, b) => {
+      if (a.s !== b.s) return a.s - b.s;
+      return a.posture === 'sit' ? -1 : 1;
+    });
+
     const combinedData = [];
     let header = null;
-    for (let fileIndex = 0; fileIndex < sessions.length; fileIndex++) {
-      const session = sessions[fileIndex];
-      const getFileParams = { Bucket: DEST_BUCKET, Key: session.key };
-      const file = await destS3.send(new GetObjectCommand(getFileParams));
-      const fileContent = await file.Body.transformToString("utf-8");
-      const rows = fileContent.split('\n').filter((line) => line.trim() !== '');
-      if (rows.length < 2) {
-        continue;
-      }
-      if (fileIndex === 0) {
+    for (let i = 0; i < sessions.length; i++) {
+      const session = sessions[i];
+      const file = await destS3.send(new GetObjectCommand({ Bucket: DEST_BUCKET, Key: session.key }));
+      const content = await file.Body.transformToString("utf-8");
+      const rows = content.split('\n').filter(line => line.trim() !== '');
+      if (rows.length < 2) continue;
+
+      if (i === 0) {
         header = rows[0].split(',').map(h => h.trim());
       }
-      const rowValues = rows[1].split(',').map(val => val.trim());
-      const rowObject = {};
-      header.forEach((colName, j) => {
-        rowObject[colName] = rowValues[j] || '';
+
+      const values = rows[1].split(',').map(v => v.trim());
+      const rowObj = {};
+      header.forEach((col, j) => {
+        rowObj[col] = values[j] || '';
       });
-      rowObject.sessionS = session.s;
-      combinedData.push(rowObject);
+
+      rowObj.sessionS = session.s;
+      rowObj.posture = session.posture;
+      combinedData.push(rowObj);
     }
+
     return combinedData;
   } catch (error) {
     console.error(`❌ Error fetching char sessions for patient ${patientId}: ${error.message}`);
     return [];
   }
 };
+
 
 
 module.exports = {

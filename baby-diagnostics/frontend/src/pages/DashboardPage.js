@@ -131,10 +131,13 @@ function DashboardPage() {
   return a.sessionS - b.sessionS;
   });
 
-  const modifiedData = sortedData.map(item => ({
+const modifiedData = sortedData.map(item => ({
   ...item,
-  sessionLabel: item.sessionS ? `S${item.sessionS}` : ''
-  }));
+  sessionLabel: item.sessionS && item.posture
+    ? `S${item.sessionS} (${item.posture})`
+    : `S${item.sessionS}`
+}));
+
 
   //HOLD
   // const modifiedData = sortedData.map(item => ({

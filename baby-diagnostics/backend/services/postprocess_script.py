@@ -148,7 +148,10 @@ def process_char(file_content):
     moveCount_Norm = len(move_bout_durations) / session_time if session_time > 0 else np.nan
     pathLengthAvg_Norm = path_length / session_time if session_time > 0 else np.nan
 
-    pathLenMean = np.nanmean(joy_path_lengths)
+    if len(joy_path_lengths) > 0:
+        pathLenMean = np.nanmean(joy_path_lengths)
+    else:
+        pathLenMean = 0 
     pathEfficiency = path_length / pathLenMean
 
     perFR = percentage_FR * 100

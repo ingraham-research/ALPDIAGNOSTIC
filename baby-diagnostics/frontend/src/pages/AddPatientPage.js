@@ -1,5 +1,22 @@
 import React, { useState, useEffect } from "react";
-import { Typography, Button, Box, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions, ListItemButton } from "@mui/material";
+import {
+  Typography,
+  Button,
+  Box,
+  List,
+  ListItem,
+  ListItemText,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  ListItemButton,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
+} from "@mui/material";
+
 import { useNavigate } from "react-router-dom";
 
 function AddPatientPage() {
@@ -19,6 +36,7 @@ function AddPatientPage() {
   const [pendingSessionNumber, setPendingSessionNumber] = useState('');
 
   const [showSessionHelp, setShowSessionHelp] = useState(false);
+  const [isStand, setIsStand] = useState(false);
 
 
 
@@ -150,6 +168,7 @@ function AddPatientPage() {
     setPendingPatientId(patientId);
     setPendingSessionNumber(sessionNumber);
     setShowSessionHelp(false); 
+    setIsStand(false);
 
     try {
       const response = await fetch(`${BACKEND_URL}/recent-source-files`);
@@ -169,6 +188,7 @@ function AddPatientPage() {
     }
 
     setShowFileDialog(false);
+    setSelectedFile(null);
 
     setSyncLoading((prev) => ({ ...prev, [pendingPatientId]: true }));
 
@@ -179,10 +199,11 @@ function AddPatientPage() {
       headers: { 'Content-Type': 'application/json' },
       credentials: 'omit',
       body: JSON.stringify({
-        patientId: pendingPatientId,
-        sessionNumber: pendingSessionNumber,
-        fileName: selectedFile.fileName
-      }),
+      patientId: pendingPatientId,
+      sessionNumber: pendingSessionNumber,
+      fileName: selectedFile.fileName,
+      sitOrStand: isStand ? 'stand' : 'sit',  // ✅ added this
+    }),
     });
 
     const message = await response.text();
@@ -219,8 +240,7 @@ function AddPatientPage() {
     if (!window.confirm("Are you sure you want to delete this session file?")) return;
 
     console.log(`Deleting session file: ${fileName} for patient: ${patient}`); // Debugging message
-    fileName = fileName.replace('V', 'T')
-    const response = await fetch(`${BACKEND_URL}/delete-patient/${selectedPatient}`, {
+    const response = await fetch(`${BACKEND_URL}/delete-session/${selectedPatient}/${fileName}`, {
       method: 'DELETE',
       credentials: 'omit'
     });
@@ -300,7 +320,10 @@ function AddPatientPage() {
       </Dialog>
 
       {/* File Selection Dialog */}
-      <Dialog open={showFileDialog} onClose={() => setShowFileDialog(false)}>
+      <Dialog open={showFileDialog} onClose={() => {
+        setShowFileDialog(false);
+        setSelectedFile(null); // reset selection
+      }}>
         <DialogTitle>Select File to Sync</DialogTitle>
         <DialogContent>
           <List>
@@ -328,6 +351,21 @@ function AddPatientPage() {
               </ListItem>
             ))}
           </List>
+          <FormControl fullWidth sx={{ mt: 2, mb: 2 }}>
+            <InputLabel id="posture-label">Posture</InputLabel>
+            <Select
+              labelId="posture-label"
+              id="posture-select"
+              value={isStand ? 'stand' : 'sit'}
+              label="Posture"
+              onChange={(e) => setIsStand(e.target.value === 'stand')}
+            >
+              <MenuItem value="sit">Sit</MenuItem>
+              <MenuItem value="stand">Stand</MenuItem>
+            </Select>
+          </FormControl>
+
+
         <Typography variant="body2" sx={{ mt: 2, display: 'flex', alignItems: 'center', color: 'primary.main' }}>
   <Button
     size="small"
@@ -370,7 +408,12 @@ function AddPatientPage() {
 
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setShowFileDialog(false)}>Cancel</Button>
+          <Button onClick={() => {
+            setShowFileDialog(false);
+            setSelectedFile(null); // ✅ reset file selection when cancel is clicked
+          }}>
+            Cancel
+          </Button>
           <Button onClick={confirmFileSync} color="primary">Sync Selected File</Button>
         </DialogActions>
       </Dialog>
