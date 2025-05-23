@@ -65,6 +65,9 @@ function DashboardPage() {
   const [latestConfidence, setLatestConfidence] = useState(null);
   const [confidenceScores, setConfidenceScores] = useState({});
 
+  const [showChart, setShowChart] = useState(false);
+
+
   const predefinedPresets = {
     'Session Time': ['session_time_min', 'moving_time_min'],
     'Joystick Bouts': ['num_bouts', 'joy_activations', 'joy_attempts'],
@@ -130,6 +133,13 @@ function DashboardPage() {
 
     fetchCharData();
   }, [patientName]);
+
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      setShowChart(true);
+    });
+  }, []);
+
 
 
   const sortedData = [...charData].sort((a, b) => {
@@ -225,7 +235,7 @@ const modifiedData = sortedData.map(item => {
         </Paper>
 
         <Paper sx={{ padding: '20px' }}>
-          {mounted && (
+          {showChart && (
             <ResponsiveContainer width="100%" height={400}>
               <LineChart data={modifiedData} margin={{ top: 30, right: 40, left: 10, bottom: 10 }}>
                 <CartesianGrid strokeDasharray="4 4" stroke="#ccc" />
