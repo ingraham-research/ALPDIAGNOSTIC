@@ -111,6 +111,15 @@ function AddPatientPage() {
 
       const sessionsData = await response.json();
       console.log("Sessions data:", sessionsData);
+
+      sessionsData.sort((a, b) => {
+        const getSessionNumber = (fileName) => {
+          const match = fileName.match(/S(\d+)/i);
+          return match ? parseInt(match[1], 10) : 0;
+        };
+        return getSessionNumber(a.fileName) - getSessionNumber(b.fileName);
+      });
+
       setSessions(sessionsData);
     } catch (error) {
       console.error('Error fetching sessions:', error.message);
