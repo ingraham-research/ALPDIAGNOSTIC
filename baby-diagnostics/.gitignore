@@ -9,6 +9,6 @@ __pycache__/
 # Environment files
 .env
 
+# macOS system files
 .DS_Store
-
-.ipynb_checkpoints
+**/.DS_Store
