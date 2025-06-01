@@ -20,7 +20,7 @@ function App() {
     return () => unsubscribe();
   }, []);
 
-  if (loading) return null; // Prevent routes from rendering until auth state is ready
+  if (loading) return null;
 
   return (
     <Router>
@@ -32,7 +32,6 @@ function App() {
         <Route path="/dashboard" element={user ? <DashboardPage /> : <Navigate to="/login" />} />
         <Route path="*" element={<Navigate to={user ? "/home" : "/login"} />} />
       </Routes>
-
     </Router>
   );
 }

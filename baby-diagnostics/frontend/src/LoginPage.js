@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Box, TextField, Typography, Button, Paper, Alert, Link } from '@mui/material';
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from './firebase';
-import { useNavigate } from 'react-router-dom'; // ⬅️ for redirect
+import { useNavigate } from 'react-router-dom';
 
 function LoginPage() {
   const [email, setEmail] = useState('');
@@ -10,12 +10,12 @@ function LoginPage() {
   const [errorMsg, setErrorMsg] = useState('');
   const [resetSent, setResetSent] = useState(false);
 
-  const navigate = useNavigate(); // ⬅️ navigate after login
+  const navigate = useNavigate();
 
   const handleLogin = async () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      navigate('/home'); // ⬅️ redirect to home/dashboard
+      navigate('/home');
     } catch (err) {
       console.error(err);
       setErrorMsg("Login failed. Please check your email and password.");
@@ -43,7 +43,7 @@ function LoginPage() {
         component="form"
         onSubmit={(e) => {
           e.preventDefault();
-          handleLogin(); // ⬅️ trigger login on Enter
+          handleLogin();
         }}
         elevation={3}
         sx={{ padding: 4, width: 350, textAlign: 'center' }}
@@ -83,7 +83,7 @@ function LoginPage() {
 
         <Link
           component="button"
-          type="button" // ⬅️ prevent it from acting like a submit button
+          type="button"
           variant="body2"
           onClick={handleForgotPassword}
           sx={{ textTransform: 'none' }}

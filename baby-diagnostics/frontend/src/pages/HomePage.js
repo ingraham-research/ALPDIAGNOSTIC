@@ -3,22 +3,19 @@ import { Typography, Button, Box, MenuItem, TextField } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { getAuth, signOut } from 'firebase/auth';
 
-
 function HomePage() {
   const navigate = useNavigate();
   const [patients, setPatients] = useState([]);
   const [selectedPatient, setSelectedPatient] = useState('');
-
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
-  // Fetch patients from the backend API on component mount
   useEffect(() => {
     const fetchPatients = async () => {
       try {
         const response = await fetch(`${BACKEND_URL}/list-patients`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
-          credentials: 'omit'  // VERY IMPORTANT for deployed backend to avoid 431 errors
+          credentials: 'omit'
         });
 
         if (!response.ok) {
@@ -26,7 +23,7 @@ function HomePage() {
         }
 
         const data = await response.json();
-        setPatients(data);  // Set patients in state
+        setPatients(data);
       } catch (error) {
         console.error('Error fetching patients:', error);
       }
@@ -35,7 +32,6 @@ function HomePage() {
     fetchPatients();
   }, []);
 
-  // Handle selecting a patient and navigating to their dashboard
   const handleGoToDashboard = () => {
     if (selectedPatient) {
       navigate(`/dashboard`, { state: { patientName: selectedPatient } });
@@ -43,11 +39,12 @@ function HomePage() {
       alert('Please select a patient.');
     }
   };
+
   const handleLogout = () => {
     const auth = getAuth();
     signOut(auth)
       .then(() => {
-        navigate('/login'); // ⬅️ change this if your login route is different
+        navigate('/login');
       })
       .catch((error) => {
         console.error('Logout failed:', error);
@@ -69,7 +66,6 @@ function HomePage() {
         ALP Diagnostics
       </Typography>
 
-      {/* Dropdown for selecting a patient */}
       <TextField
         select
         label="Select Patient"
@@ -88,7 +84,6 @@ function HomePage() {
         )}
       </TextField>
 
-      {/* Buttons */}
       <Button
         variant="contained"
         color="primary"

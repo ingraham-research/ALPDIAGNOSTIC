@@ -114,34 +114,13 @@ const deletePatientFolder = async (patientId) => {
   }
 };
 
-// const getLatestFileFromSource = async () => {
-//   const params = { Bucket: SOURCE_BUCKET, Prefix: `explorer-mini-logger-2/` };
-//   try {
-//     const data = await sourceS3.send(new ListObjectsV2Command(params));
-//     if (!data.Contents || data.Contents.length === 0) {
-//       return null;
-//     }
-//     const latestFile = data.Contents.sort((a, b) => new Date(b.LastModified) - new Date(a.LastModified))[0];
-//     console.log('📄 Latest file selected:', latestFile.Key);
-//     const file = await sourceS3.send(new GetObjectCommand({ Bucket: SOURCE_BUCKET, Key: latestFile.Key }));
-//     const fileData = await file.Body.transformToString("utf-8");
-//     return { fileData, fileName: latestFile.Key.split("/").pop() };
-//   } catch (error) {
-//     console.error(`❌ Error fetching the latest file from source: ${error.message}`);
-//     return null;
-//   }
-// };
-
 const getRecentFilesFromSource = async (count = 3) => {
   const params = { Bucket: SOURCE_BUCKET, Prefix: `explorer-mini-logger-2/` };
-
   try {
     const data = await sourceS3.send(new ListObjectsV2Command(params));
     if (!data.Contents || data.Contents.length === 0) {
       return [];
     }
-
-    // Sort by LastModified descending and take top N
     const recentFiles = data.Contents
       .sort((a, b) => new Date(b.LastModified) - new Date(a.LastModified))
       .slice(0, count)
@@ -150,9 +129,7 @@ const getRecentFilesFromSource = async (count = 3) => {
         fileName: file.Key.split("/").pop(),
         lastModified: file.LastModified
       }));
-
     return recentFiles;
-
   } catch (error) {
     console.error(`❌ Error fetching recent files: ${error.message}`);
     return [];
@@ -251,7 +228,6 @@ const processAndUploadSession = async (patientId, sessionNumber, fileName = null
   }
 };
 
-
 const listPatientCharSessions = async (patientId) => {
   const params = { Bucket: DEST_BUCKET, Prefix: `${patientId}/char/` };
   try {
@@ -263,15 +239,13 @@ const listPatientCharSessions = async (patientId) => {
     const sessions = data.Contents
       .map((file) => {
         const fileName = file.Key.split("/").pop();
-
-        // Updated regex to match: S3_sit_char.csv or S4_stand_char.csv
         const match = fileName.match(/S(\d+)_(sit|stand)_char\.csv/);
         if (match) {
           return {
             fileName,
             key: file.Key,
             s: parseInt(match[1], 10),
-            posture: match[2],  // 'sit' or 'stand'
+            posture: match[2],
             url: `https://${DEST_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${file.Key}`,
           };
         }
@@ -279,7 +253,6 @@ const listPatientCharSessions = async (patientId) => {
       })
       .filter((session) => session !== null);
 
-    // Sort first by session number, then sit before stand
     sessions.sort((a, b) => {
       if (a.s !== b.s) return a.s - b.s;
       return a.posture === 'sit' ? -1 : 1;
@@ -293,17 +266,14 @@ const listPatientCharSessions = async (patientId) => {
       const content = await file.Body.transformToString("utf-8");
       const rows = content.split('\n').filter(line => line.trim() !== '');
       if (rows.length < 2) continue;
-
       if (i === 0) {
         header = rows[0].split(',').map(h => h.trim());
       }
-
       const values = rows[1].split(',').map(v => v.trim());
       const rowObj = {};
       header.forEach((col, j) => {
         rowObj[col] = values[j] || '';
       });
-
       rowObj.sessionS = session.s;
       rowObj.posture = session.posture;
       combinedData.push(rowObj);
@@ -316,8 +286,6 @@ const listPatientCharSessions = async (patientId) => {
   }
 };
 
-
-
 module.exports = {
   createPatientFolder,
   processAndUploadSession,
@@ -326,7 +294,6 @@ module.exports = {
   deleteSessionFile,
   deletePatientFolder,
   listPatientCharSessions,
-  getRecentFilesFromSource,   
-  fetchFileContent            
+  getRecentFilesFromSource,
+  fetchFileContent
 };
-
