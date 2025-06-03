@@ -15,7 +15,7 @@ const {
 const app = express();
 
 app.use(cors({
-  origin: 'alpdiagnostic-nu.vercel.app', // CHANGE HERE
+  origin: 'https://alpdiagnostic-nu.vercel.app', // CHANGE HERE
   methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type'],
   credentials: false
