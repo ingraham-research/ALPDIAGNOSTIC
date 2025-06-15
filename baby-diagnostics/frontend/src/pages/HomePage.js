@@ -98,7 +98,7 @@ function HomePage() {
         sx={{ width: '200px' }}
         onClick={() => navigate('/add-patient')}
       >
-        Add Patient
+        Manage Patients
       </Button>
       <Button
         variant="text"
